@@ -10,11 +10,11 @@ export const FONTS = {
     // Note: These should be replaced with your actual font files after installing them
     // For example, after running: npm install @expo-google-fonts/poppins
     families: {
-      regular: 'System', // Will be replaced with actual font like 'Poppins-Regular'
-      medium: 'System',  // Will be replaced with actual font like 'Poppins-Medium'
-      bold: 'System',    // Will be replaced with actual font like 'Poppins-Bold'
-      light: 'System',   // Will be replaced with actual font like 'Poppins-Light'
-      italic: 'System',  // Will be replaced with actual font like 'Poppins-Italic'
+      regular: 'Poppins_400Regular',
+      medium: 'Poppins_500Medium',
+      bold: 'Poppins_700Bold',
+      light: 'Poppins_400Regular',
+      italic: 'Poppins_400Regular',  // Will be replaced with actual font like 'Poppins-Italic'
     },
     
     // Font sizes for different UI elements

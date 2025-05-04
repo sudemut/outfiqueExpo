@@ -15,27 +15,53 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import { COLORS } from '../../theme/colors';
 import { FONTS } from '../../theme/fonts';
+// At the top of LoginScreen.js, add the import for AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '../../services/api'; 
 
 const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+// Then update the handleLogin function
 
-  const handleLogin = () => {
-    // In a real app, validate inputs and call auth service
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // For now, just navigate to the main app
+const handleLogin = () => {
+  setIsLoading(true);
+
+  const credentials = {
+    phoneNumber,
+    password,
+  };
+
+  authService.login(credentials)
+    .then(async (response) => {
+      // Token ve kullanıcı bilgilerini kaydet
+      await AsyncStorage.setItem('userToken', response.token);
+      await AsyncStorage.setItem('userId', response.user._id); // kullanıcı bilgisi backend'den dönüyorsa
+
+      // Ana sayfaya yönlendir
       navigation.reset({
         index: 0,
-        routes: [{ name: 'MainApp' }],
+        routes: [
+          {
+            name: 'Main',
+            state: {
+              index: 0,
+              routes: [{ name: 'Home' }],
+            },
+          },
+        ],
       });
-    }, 1500);
-  };
+    })
+    .catch((error) => {
+      console.error('Login failed:', error);
+      Alert.alert('Login Error', error.message || 'Invalid phone or password');
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+};
 
   return (
     <SafeAreaView style={styles.container}>

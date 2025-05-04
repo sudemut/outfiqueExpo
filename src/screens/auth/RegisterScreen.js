@@ -7,20 +7,21 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Image,
-  FlatList,
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { COLORS } from '../../theme/colors';
 import { FONTS } from '../../theme/fonts';
+import { KeyboardAvoidingView, Platform } from 'react-native';
+// At the top of RegisterScreen.js, add the import for AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '../../services/api';
+
 
 const { width } = Dimensions.get('window');
 
-// Aesthetics data
 // Aesthetics data
 const aesthetics = [
   {
@@ -100,14 +101,13 @@ const aesthetics = [
     colors: ['#90EE90', '#F5F5DC', '#FFA500'],
     sticker: require('../../assets/images/aesthetics/cottagore.png'),
   },
-
   {
     id: '12',
     name: 'Indie',
     description: 'Indie tarzı, ana akımın dışında kalan özgün, yaratıcı ve bireysel estetik anlayışı',
-    colors:['#FFB6C1', '#FFD700', '#9370DB'],
+    colors: ['#FFB6C1', '#FFD700', '#9370DB'],
     sticker: require('../../assets/images/aesthetics/indie.jpg')
-  }
+  }
 ];
 
 const RegisterScreen = ({ navigation }) => {
@@ -128,19 +128,46 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
+
+
+
+
   const handleRegister = () => {
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // For now, just navigate to the main app
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainApp' }],
+  
+    const userData = {
+      name,
+      username,
+      phoneNumber,
+      password,
+      aesthetics: selectedAesthetics,
+    };
+  
+    authService.register(userData)
+      .then(async (response) => {
+        await AsyncStorage.setItem('userToken', response.token);
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Main',
+              state: {
+                index: 0,
+                routes: [{ name: 'Home' }],
+              },
+            },
+          ],
+        });
+      })
+      .catch((error) => {
+        console.error('Registration failed:', error);
+        Alert.alert('Registration Error', error.message || 'Please try again.');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-    }, 1500);
   };
+  
 
   const isFirstStepValid = () => {
     return name.trim() !== '' && username.trim() !== '' && 
@@ -149,211 +176,190 @@ const RegisterScreen = ({ navigation }) => {
 
   const renderPersonalInfoStep = () => {
     return (
-      <ScrollView contentContainerStyle={styles.formContainer}>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '50%' }]} />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.formContent}>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '50%' }]} />
+            </View>
+            <Text style={styles.progressText}>Step 1 of 2</Text>
           </View>
-          <Text style={styles.progressText}>Step 1 of 2</Text>
-        </View>
 
-        <Text style={styles.stepTitle}>Tell us about yourself</Text>
-        <Text style={styles.stepDescription}>
-          Create your profile to start sharing your outfits
-        </Text>
+          <Text style={styles.stepTitle}>Tell us about yourself</Text>
+          <Text style={styles.stepDescription}>
+            Create your profile to start sharing your outfits
+          </Text>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Full Name</Text>
-          <View style={styles.inputWrapper}>
-            <Icon name="user" size={20} color={COLORS.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your full name"
-              placeholderTextColor={COLORS.gray}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Username</Text>
-          <View style={styles.inputWrapper}>
-            <Icon name="at-sign" size={20} color={COLORS.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Choose a username"
-              placeholderTextColor={COLORS.gray}
-              value={username}
-              onChangeText={setUsername}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Phone Number</Text>
-          <View style={styles.inputWrapper}>
-            <Icon name="phone" size={20} color={COLORS.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your phone number"
-              placeholderTextColor={COLORS.gray}
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={styles.inputWrapper}>
-            <Icon name="lock" size={20} color={COLORS.gray} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Create a password"
-              placeholderTextColor={COLORS.gray}
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity
-              style={styles.visibilityButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Icon
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color={COLORS.gray}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="user" size={20} color={COLORS.gray} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your full name"
+                placeholderTextColor={COLORS.gray}
+                value={name}
+                onChangeText={setName}
               />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Username</Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="at-sign" size={20} color={COLORS.gray} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Choose a username"
+                placeholderTextColor={COLORS.gray}
+                value={username}
+                onChangeText={setUsername}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Phone Number</Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="phone" size={20} color={COLORS.gray} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your phone number"
+                placeholderTextColor={COLORS.gray}
+                keyboardType="phone-pad"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <Icon name="lock" size={20} color={COLORS.gray} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Create a password"
+                placeholderTextColor={COLORS.gray}
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                style={styles.visibilityButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color={COLORS.gray}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              !isFirstStepValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={() => setCurrentStep(2)}
+            disabled={!isFirstStepValid()}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginLink}>Log In</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            !isFirstStepValid() && styles.nextButtonDisabled,
-          ]}
-          onPress={() => setCurrentStep(2)}
-          disabled={!isFirstStepValid()}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Log In</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     );
   };
-
-  const renderAestheticItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.aestheticCard,
-        selectedAesthetics.includes(item.id) && styles.selectedAestheticCard,
-      ]}
-      onPress={() => handleAestheticSelection(item.id)}
-    >
-      <View style={styles.stickerContainer}>
-        <Image source={item.sticker} style={styles.stickerImage} />
-      </View>
-      <Text style={styles.aestheticName}>{item.name}</Text>
-      {selectedAesthetics.includes(item.id) && (
-        <View style={styles.selectedCheck}>
-          <Icon name="check" size={16} color={COLORS.white} />
-        </View>
-      )}
-      <View style={styles.colorPalette}>
-        {item.colors.map((color, index) => (
-          <View
-            key={index}
-            style={[styles.colorDot, { backgroundColor: color }]}
-          />
-        ))}
-      </View>
-    </TouchableOpacity>
-  );
-
+  
   const renderAestheticSelectionStep = () => {
     return (
-      <View style={styles.formContainer}>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '100%' }]} />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView 
+          contentContainerStyle={{ padding: 24, paddingBottom: 160, flexGrow: 1 }} 
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={true}
+        >
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '100%' }]} />
+            </View>
+            <Text style={styles.progressText}>Step 2 of 2</Text>
           </View>
-          <Text style={styles.progressText}>Step 2 of 2</Text>
-        </View>
 
-        <Text style={styles.stepTitle}>Choose your style aesthetics</Text>
-        <Text style={styles.stepDescription}>
-          Select the aesthetics you love to personalize your experience
-        </Text>
-        <Text style={styles.selectionHint}>You can select multiple options</Text>
+          <Text style={styles.stepTitle}>Choose your style aesthetics</Text>
+          <Text style={styles.stepDescription}>
+            Select the aesthetics you love to personalize your experience
+          </Text>
+          <Text style={styles.selectionHint}>You can select multiple options</Text>
 
-        <FlatList
-          data={aesthetics}
-          numColumns={2}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.aestheticsGrid}
-          renderItem={renderAestheticItem}
-          showsVerticalScrollIndicator={false}
-        />
+          {/* Register button moved here */}
+          <View style={{ flexDirection: 'row', marginBottom: 24 }}>
+            <TouchableOpacity
+              style={[styles.registerButton, selectedAesthetics.length === 0 && styles.registerButtonDisabled, { flex: 1 }]}
+              onPress={handleRegister}
+              disabled={selectedAesthetics.length === 0 || isLoading}
+            >
+              <Text style={styles.registerButtonText}>
+                {isLoading ? 'Creating account...' : 'Create Account'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.buttonsRow}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setCurrentStep(1)}
-          >
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              selectedAesthetics.length === 0 && styles.registerButtonDisabled,
-            ]}
-            onPress={handleRegister}
-            disabled={selectedAesthetics.length === 0 || isLoading}
-          >
-            {isLoading ? (
-              <View style={styles.loadingIndicator}>
-                <Text style={styles.registerButtonText}>Creating account...</Text>
-              </View>
-            ) : (
-              <Text style={styles.registerButtonText}>Create Account</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+            {aesthetics.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.aestheticCard, selectedAesthetics.includes(item.id) && styles.selectedAestheticCard]}
+                onPress={() => handleAestheticSelection(item.id)}
+              >
+                <View style={styles.stickerContainer}>
+                  <Image source={item.sticker} style={styles.stickerImage} />
+                </View>
+                <Text style={styles.aestheticName}>{item.name}</Text>
+                {selectedAesthetics.includes(item.id) && (
+                  <View style={styles.selectedCheck}>
+                    <Icon name="check" size={16} color={COLORS.white} />
+                  </View>
+                )}
+                <View style={styles.colorPalette}>
+                  {item.colors.map((color, index) => (
+                    <View key={index} style={[styles.colorDot, { backgroundColor: color }]} />
+                  ))}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={{ marginTop: 24 }}>
+            <TouchableOpacity style={styles.backButton} onPress={() => setCurrentStep(1)}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={styles.backToWelcomeButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.primary} />
-          </TouchableOpacity>
-
-          <View style={styles.logoContainer}>
-            <Text style={styles.appName}>OUTFIQUE</Text>
-          </View>
+    <SafeAreaView style={[styles.container, { flex: 1 }]}> 
+      <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backToWelcomeButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <Text style={styles.appName}>OUTFIQUE</Text>
         </View>
-
-        {currentStep === 1 ? renderPersonalInfoStep() : renderAestheticSelectionStep()}
-      </KeyboardAvoidingView>
+      </View>
+      {currentStep === 1 ? renderPersonalInfoStep() : renderAestheticSelectionStep()}
     </SafeAreaView>
   );
 };
@@ -363,16 +369,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  keyboardView: {
-    flex: 1,
-  },
   headerContainer: {
     padding: 24,
     paddingBottom: 0,
   },
-  formContainer: {
+  scrollContainer: {
+    paddingBottom: 80, // Add plenty of scrollable space at the bottom
+  },
+  formContent: {
     padding: 24,
-    flex: 1,
   },
   backToWelcomeButton: {
     width: 40,
@@ -485,15 +490,17 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
   },
-  aestheticsGrid: {
-    paddingBottom: 16,
+  aestheticsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   aestheticCard: {
-    width: (width - 64) / 2,
+    width: (width - 64) / 2,  // Account for padding and space between cards
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 8,
     marginBottom: 16,
     shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
@@ -550,7 +557,8 @@ const styles = StyleSheet.create({
   buttonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 24,
+    marginBottom: 20,
   },
   backButton: {
     flex: 1,

@@ -9,13 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      
       "supportsTablet": true,
-      "infoPlist" : {
-       "NSCameraUsageDescription": "We need access to your camera to let you take outfit photos.",
-       "NSPhotoLibraryUsageDescription": "We need access to your photo library to select outfit images."
-        }
-      
+      "infoPlist": {
+        "NSCameraUsageDescription": "We need access to your camera to let you take outfit photos.",
+        "NSPhotoLibraryUsageDescription": "We need access to your photo library to select outfit images."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,7 +35,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
